@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+</head>
+<body>
+    <h2>Welcome, Admin!</h2>
+    <!-- Admin dashboard content -->
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Logout</button>
+    </form>
+</body>
+</html>

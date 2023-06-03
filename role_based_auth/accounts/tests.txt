@@ -1,0 +1,386 @@
+from tokenize import Token
+
+from django.test import RequestFactory
+from django.test import TestCase
+from django.urls import reverse, resolve
+from .api_v1_admin.views import *
+from .models import accountsRole, User
+
+
+# <editor-fold desc="models unit testing">
+class AccountsRoleModelTestCase(TestCase):
+    """
+    The purpose of the setUp method is to set up any necessary preconditions or objects that will
+    be used by multiple test cases within the test class.
+    This can include creating database records, initializing objects, or any other setup actions required for the test cases.
+    """
+
+    def setUp(self):
+        self.role = accountsRole.objects.create(name='Test Role')
+
+    def test_role_create(self):
+        """
+        The purpose of assertIsNotNone is to check if a value is not None.
+         If the value is not None, the test case passes.
+        If the value is None, an assertion error is raised, indicating that the test case has failed.
+        """
+        print("Testing Role Creation...")
+        self.assertEqual(self.role.name, 'Test Role')
+        self.assertIsNotNone(self.role.created_at)
+        self.assertIsNotNone(self.role.updated_at)
+        self.assertIsNotNone(self.role.slug)
+        print("Role Created Successfully.")
+
+    def test_role_read(self):
+        """
+        The purpose of assertEqual is to compare two values and assert that they are equal.
+         If the values are equal, the test case passes.
+        If the values are not equal, an assertion error is raised, indicating that the test case has failed.
+        """
+        print("Testing Role Reading...")
+        fetched_role = accountsRole.objects.get(id=self.role.id)
+        self.assertEqual(fetched_role.name, self.role.name)
+        print("Role Read Successfully.")
+
+    def test_role_update(self):
+        print("Testing Role Update...")
+        new_name = 'Updated Role'
+        self.role.name = new_name
+        self.role.save()
+
+        updated_role = accountsRole.objects.get(id=self.role.id)
+        self.assertEqual(updated_role.name, new_name)
+        # self.assertEqual(updated_role.slug, slugify(new_name))
+        print("Role Updated Successfully.")
+
+    def test_role_delete(self):
+        print("Testing Role Deletion...")
+        self.role.delete()
+        self.assertFalse(accountsRole.objects.filter(id=self.role.id).exists())
+        print("Role Deleted Successfully.")
+
+
+class UserModelTestCase(TestCase):
+    def setUp(self):
+        self.role = accountsRole.objects.create(name='Test Role')
+        self.user = User.objects.create(username='test_user', role=self.role)
+
+    def test_user_create(self):
+        print("Testing User Creation...")
+        self.assertEqual(self.user.username, 'test_user')
+        self.assertEqual(self.user.role, self.role)
+        self.assertIsNotNone(self.user.created_at)
+        self.assertIsNotNone(self.user.updated_at)
+        self.assertIsNotNone(self.role.slug)
+        print("User Created Successfully.")
+
+    def test_user_read(self):
+        print("Testing User Reading...")
+        fetched_user = User.objects.get(id=self.user.id)
+        self.assertEqual(fetched_user.username, self.user.username)
+        print("User Read Successfully.")
+
+    def test_user_update(self):
+        print("Testing User Update...")
+        new_username = 'updated_user'
+        self.user.username = new_username
+        self.user.save()
+
+        updated_user = User.objects.get(id=self.user.id)
+        self.assertEqual(updated_user.username, new_username)
+        print("User Updated Successfully.")
+
+    def test_user_delete(self):
+        user_id = self.user.id
+        self.user.delete()
+        user_exists = User.objects.filter(id=user_id).exists()
+        self.assertFalse(user_exists)
+        print("User Deleted Successfully.")
+
+
+# ============indi visual=======#
+# class AccountsRoleModelTestCase(TestCase):
+#     """
+#     Test cases for the accountsRole model.
+#     """
+#
+#     def setUp(self):
+#         """
+#         Set up the necessary objects for the tests.
+#         """
+#         self.role = accountsRole.objects.create(name='Test Role')
+#
+#     def test_role_name(self):
+#         """
+#         Test the name field of the accountsRole model.
+#         """
+#         print("Testing role name...")
+#         self.assertEqual(self.role.name, 'Test Role')
+#
+#     def test_role_slug(self):
+#         """
+#         Test the slug field of the accountsRole model.
+#         """
+#         print("Testing role slug...")
+#         self.assertIsNotNone(self.role.slug)
+#
+#     def test_role_created_at(self):
+#         """
+#         Test the created_at field of the accountsRole model.
+#         """
+#         print("Testing role created_at...")
+#         self.assertIsNotNone(self.role.created_at)
+#
+#     def test_role_updated_at(self):
+#         """
+#         Test the updated_at field of the accountsRole model.
+#         """
+#         print("Testing role updated_at...")
+#         self.assertIsNotNone(self.role.updated_at)
+#
+#
+# class UserModelTestCase(TestCase):
+#     """
+#     Test cases for the User model.
+#     """
+#
+#     def setUp(self):
+#         """
+#         Set up the necessary objects for the tests.
+#         """
+#         self.role = accountsRole.objects.create(name='Test Role')
+#         self.user = User.objects.create(username='testuser', role=self.role)
+#
+#     def test_user_username(self):
+#         """
+#         Test the username field of the User model.
+#         """
+#         print("Testing user username...")
+#         self.assertEqual(self.user.username, 'testuser')
+#
+#     def test_user_role(self):
+#         """
+#         Test the role field of the User model.
+#         """
+#         print("Testing user role...")
+#         self.assertEqual(self.user.role, self.role)
+#
+#     def test_user_slug(self):
+#         """
+#         Test the slug field of the User model.
+#         """
+#         print("Testing user slug...")
+#         self.assertIsNotNone(self.user.slug)
+#
+#     def test_user_created_at(self):
+#         """
+#         Test the created_at field of the User model.
+#         """
+#         print("Testing user created_at...")
+#         self.assertIsNotNone(self.user.created_at)
+#
+#     def test_user_updated_at(self):
+#         """
+#         Test the updated_at field of the User model.
+#         """
+#         print("Testing user updated_at...")
+#         self.assertIsNotNone(self.user.updated_at)
+# </editor-fold>
+
+# <editor-fold desc="serializer unit testing">
+class AccountsAdminaccountsRoleSerializerTest(TestCase):
+    def test_serializer_valid_data(self):
+        print("serailizer valid test accounts role")
+        role_data = {'name': 'Test Role'}
+        serializer = AccountsAdminaccountsRoleSerializer(data=role_data)
+        self.assertTrue(serializer.is_valid())
+
+    def test_serializer_invalid_data(self):
+        print("serailizer in valid test accounts role")
+
+        role_data = {'name': ''}
+        serializer = AccountsAdminaccountsRoleSerializer(data=role_data)
+        self.assertFalse(serializer.is_valid())
+
+
+class AccountsAdminUserSerializerTest(TestCase):
+    def test_serializer_valid_data(self):
+        print("Serializer valid test for accounts user")
+        role = accountsRole.objects.create(name='Test Role')
+        user_data = {'username': 'testuser', 'role': role.id, 'password': 'testpassword'}
+        serializer = AccountsAdminUserSerializer(data=user_data)
+        serializer.is_valid()
+        self.assertFalse(serializer.errors)
+
+    def test_serializer_invalid_data(self):
+        print("Serializer invalid test for accounts user")
+
+        user_data = {'username': ''}
+        serializer = AccountsAdminUserSerializer(data=user_data)
+        serializer.is_valid()
+        self.assertTrue(serializer.errors)
+
+
+# </editor-fold>
+
+# <editor-fold desc="views unit testing">
+class AccountsAdminAccountRoleCreateGenericsViewTest(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.view = accountsAdminAccountRoleCreateGenericsView.as_view()
+        self.url = reverse('accountsAdminAccountRoleCreateGenericsViewURL')
+
+        self.user = User.objects.create_user(
+            username='admin', password='admin')
+        self.token = Token.objects.create(user=self.user)
+        # self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+
+    def test_get_request(self):
+        print("get all request view account role")
+        request = self.factory.get(self.url)
+        response = self.view(request)
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_request(self):
+        print("post request account role")
+        role_data = {'name': 'Test Role'}
+        request = self.factory.post(self.url, data=role_data)
+        response = self.view(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['message'], 'account role Created successfully')
+
+
+class AccountsAdminAccountsRoleDetailsAPIViewTest(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.view = accountsAdminAccountsRoleDetailsAPIView.as_view()
+        self.role = accountsRole.objects.create(name='Test Role')
+        self.url = reverse('accountsAdminAccountsRoleDetailsAPIViewURL', args=[self.role.id])
+
+    def test_get_request(self):
+        print("account role get by id ")
+        request = self.factory.get(self.url)
+        response = self.view(request, id=self.role.id)
+        self.assertEqual(response.status_code, 200)
+
+    def test_put_request(self):
+        print("account role put request by id")
+        role_data = {'name': 'Updated Role'}
+        request = self.factory.put(self.url, data=role_data, content_type='application/json')
+        response = self.view(request, id=self.role.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['name'], 'Updated Role')
+
+    def test_delete_request(self):
+        print("account role delete request by id")
+        request = self.factory.delete(self.url, content_type='application/json')
+        response = self.view(request, id=self.role.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['data'], 'Objects Deleted Successfully')
+
+
+class AccountsAdminAccountUserCreateGenericsViewTest(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.view = accountsAdminAccountUserCreateGenericsView.as_view()
+        self.url = reverse('accountsAdminAccountUserCreateGenericsViewURL')
+
+    def test_get_request(self):
+        print("get all request view account user")
+        request = self.factory.get(self.url)
+        response = self.view(request)
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_request(self):
+        print(" account user post request")
+        role = accountsRole.objects.create(name='Test Role')
+        user_data = {
+            'username': 'testuser',
+            'password': 'testpassword',
+            'role': role.id,
+        }
+        request = self.factory.post(self.url, data=user_data)
+        response = self.view(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['message'], 'User created successfully')
+
+
+class AccountsAdminAccountsUserDetailsAPIViewTest(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.view = accountsAdminAccountsUserDetailsAPIView.as_view()
+        self.role = accountsRole.objects.create(name='Test Role')
+        self.user = User.objects.create(username='testuser', role=self.role)
+        self.url = reverse('accountsAdminAccountsUserDetailsAPIViewURL', args=[self.user.id])
+
+    def test_get_request(self):
+        print(" account User get by id")
+        request = self.factory.get(self.url)
+        response = self.view(request, id=self.user.id)
+        self.assertEqual(response.status_code, 200)
+
+    def test_put_request(self):
+        print(" account user put request by id")
+        role = accountsRole.objects.create(name='Updated Role')
+        user_data = {
+            'username': 'updateduser',
+            'role': role.id
+        }
+        request = self.factory.put(self.url, data=user_data, content_type='application/json')
+        response = self.view(request, id=self.user.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['username'], 'updateduser')
+
+    def test_delete_request(self):
+        print("account user delete request by id")
+        request = self.factory.delete(self.url, content_type='application/json')
+        response = self.view(request, id=self.user.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['data'], 'Objects Deleted Successfully')
+
+
+# # </editor-fold>
+
+# <editor-fold desc="url unit testing ">
+class AccountsURLsTest(TestCase):
+    def test_accounts_role_create_url(self):
+        url = reverse('accountsAdminAccountRoleCreateGenericsViewURL')
+        print("URL:", url)
+        resolver = resolve(url)
+        print("Resolved View:", resolver.func.__name__)
+        self.assertEqual(
+            resolver.func.__name__,
+            accountsAdminAccountRoleCreateGenericsView.as_view().__name__,
+        )
+
+    def test_accounts_role_details_url(self):
+        url = reverse('accountsAdminAccountsRoleDetailsAPIViewURL', args=[1])  # Replace 1 with a valid ID
+        print("URL:", url)
+        resolver = resolve(url)
+        print("Resolved View:", resolver.func.__name__)
+        self.assertEqual(
+            resolver.func.__name__,
+            accountsAdminAccountsRoleDetailsAPIView.as_view().__name__,
+        )
+
+    def test_accounts_user_create_url(self):
+        url = reverse('accountsAdminAccountUserCreateGenericsViewURL')
+        print("URL:", url)
+        resolver = resolve(url)
+        print("Resolved View:", resolver.func.__name__)
+        self.assertEqual(
+            resolver.func.__name__,
+            accountsAdminAccountUserCreateGenericsView.as_view().__name__,
+        )
+
+    def test_accounts_user_details_url(self):
+        url = reverse('accountsAdminAccountsUserDetailsAPIViewURL', args=[1])  # Replace 1 with a valid ID
+        print("URL:", url)
+        resolver = resolve(url)
+        print("Resolved View:", resolver.func.__name__)
+        self.assertEqual(
+            resolver.func.__name__,
+            accountsAdminAccountsUserDetailsAPIView.as_view().__name__,
+        )
+# </editor-fold>
